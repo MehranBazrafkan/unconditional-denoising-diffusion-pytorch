@@ -1,16 +1,19 @@
+# augment_images.py (Refactored)
+
 import os
 from PIL import Image
-import torchvision.transforms as transforms
+from torchvision import transforms
 
-number_of_augments = 2
+# Configuration
+NUM_AUGMENTS = 2
+INPUT_FOLDER = "./train-images/original-dataset-folder-path"
+OUTPUT_FOLDER = "./train-images/augmented-dataset-folder-path"
 
-# Paths
-input_folder = "./train-images/original-dataset-folder-path"  # Folder with original images
-output_folder = "./train-images/augmented-dataset-folder-path"  # Folder to save augmented images
-os.makedirs(output_folder, exist_ok=True)
+# Create output directory if it doesn't exist
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Define transformation (same as before)
-transform = transforms.Compose([
+# Define augmentation transformations
+augmentation_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(25),
     transforms.RandomResizedCrop(64, scale=(0.8, 1.0)),
@@ -18,15 +21,22 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
-# Loop through each image and create new augmented versions
-for i, filename in enumerate(os.listdir(input_folder)):
-    img_path = os.path.join(input_folder, filename)
+# Process images
+image_filenames = [f for f in os.listdir(INPUT_FOLDER) if f.lower().endswith(('png', 'jpg', 'jpeg'))]
+total_augmented = 0
+
+for idx, filename in enumerate(image_filenames):
+    img_path = os.path.join(INPUT_FOLDER, filename)
     img = Image.open(img_path).convert("RGB")
 
-    for j in range(number_of_augments):  # Generate 64 augmented versions per image
-        augmented_img = transform(img)  # Apply transformation
-        augmented_img = transforms.ToPILImage()(augmented_img)  # Convert back to PIL image
-        augmented_img.save(os.path.join(output_folder, f"aug_{i}_{j}.png"))
-        print(os.path.join(output_folder, f"aug_{i}_{j}.png"))
+    for j in range(NUM_AUGMENTS):
+        augmented = augmentation_transforms(img)
+        augmented_img = transforms.ToPILImage()(augmented)
 
-print(f"Generated {number_of_augments * len(os.listdir(input_folder))} augmented images!")
+        save_path = os.path.join(OUTPUT_FOLDER, f"aug_{idx}_{j}.png")
+        augmented_img.save(save_path)
+        total_augmented += 1
+
+        print(f"Saved: {save_path}")
+
+print(f"Total augmented images: {total_augmented}")
